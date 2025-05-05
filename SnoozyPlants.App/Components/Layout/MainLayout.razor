@@ -1,0 +1,34 @@
+﻿@using SnoozyPlants.App.Model
+@using System.Globalization
+@inherits LayoutComponentBase
+
+@implements IAsyncDisposable
+
+<div class="container" style="--screen-margin-bottom: @(DeviceState.ScreenMarginBottom)px; --device-pixel-ratio: @(DeviceState.DevicePixelRatio.ToString(CultureInfo.InvariantCulture))">
+    @Body
+</div>
+
+@code {
+    protected override Task OnInitializedAsync()
+    {
+        DeviceState.OnScreenMarginChange += OnScreenMarginBottomChange;
+
+        return base.OnInitializedAsync();
+    }
+
+    public void OnScreenMarginBottomChange()
+    {
+        MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            StateHasChanged();
+        });
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        DeviceState.OnScreenMarginChange -= OnScreenMarginBottomChange;
+
+        return ValueTask.CompletedTask;
+    }
+    
+}

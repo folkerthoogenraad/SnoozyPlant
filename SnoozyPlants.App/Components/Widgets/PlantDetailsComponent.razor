@@ -1,0 +1,150 @@
+﻿@using SnoozyPlants.App.Model
+@using SnoozyPlants.Core
+
+@inject ApplicationState state
+
+@if(DisplayPlant != null)
+{
+    <div class="background-dim @(DisplayClass)" @onclick="Deselect"></div>
+
+    <div class="details @(DisplayClass)">
+        <div class="horizontal">
+            <div class="thumbnail">
+                <img src="@Image.Url" />
+            </div>
+
+            <div class="plant-info">
+                <div class="title-and-edit">
+                    <h3>@DisplayPlant.Name</h3>
+                    <span class="button-link" @onclick="OnEdit">Edit</span>
+                </div>
+
+                @if(!string.IsNullOrEmpty(DisplayPlant.LatinName))
+                {
+                    <div class="plant-info-label-and-icon">
+                        <span class="icon icon-leaf"></span>
+                        <label class="plant-info-text">@DisplayPlant.LatinName</label>
+                    </div>
+                }
+
+                <div class="plant-info-label-and-icon">
+                    <span class="icon icon-location"></span>
+                    <label class="plant-info-text">@DisplayPlant.Location</label>
+                </div>
+
+                <div class="plant-info-label-and-icon">
+                    <span class="icon icon-history"></span>
+                    <label class="plant-info-text">@DateFormatter.FormatInterval(DisplayPlant.WateringIntervalInDays)</label>
+                </div>
+
+                <div class="plant-info-label-and-icon">
+                    <span class="icon icon-water"></span>
+
+                    @if (DisplayPlant.LastWateringDate.HasValue)
+                    {
+                        <label class="plant-info-text">@DateFormatter.FormatRelativeDate(DisplayPlant.LastWateringDate.Value)</label>
+                    }
+                    else
+                    {
+                        <label class="plant-info-text">Not yet wattered</label>
+                    }
+                </div>
+
+                <div class="plant-info-label-and-icon">
+                    <span class="icon icon-calendar"></span>
+
+                    @if (DisplayPlant.NextWateringDate.HasValue)
+                    {
+                        <label class="plant-info-text">@DateFormatter.FormatRelativeDate(DisplayPlant.NextWateringDate.Value)</label>
+                    }
+                    else
+                    {
+                        <label class="plant-info-text">Not yet scheduled</label>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            @if (CanSnooze)
+            {
+                <span class="button-snooze" @onclick="SnoozeAsync">
+                    <span class="icon-alarm"></span>
+                    Snooze
+                </span>
+            }
+
+            <span class="button-water" @onclick="WaterAsync">
+                <span class="icon-water"></span>
+                Water
+            </span>
+        </div>
+
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Plant? Plant { get; set; }
+
+    [Parameter]
+    public Plant DisplayPlant { get; set; } = Plant.Placeholder;
+
+    [Parameter]
+    public PlantImage Image { get; set; } = PlantImage.Placeholder;
+
+    [Parameter]
+    public EventCallback OnClone { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback OnDetailsChanged { get; set; }
+
+    public bool CanSnooze 
+    {
+        get
+        {
+            if (DisplayPlant == null) return false;
+
+            return DisplayPlant.NextWateringDate <= DateTime.Now.Date;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if(Plant != null)
+        {
+            DisplayPlant = Plant;
+
+            Image = state.GetPlantImageById(DisplayPlant.Id);
+        }
+    }
+
+    public async Task WaterAsync()
+    {
+        await state.WaterPlantAsync(DisplayPlant);
+
+        await OnDetailsChanged.InvokeAsync();
+    }
+
+    public async Task Deselect()
+    {
+        state.SetSelected(null);
+
+        await OnDetailsChanged.InvokeAsync();
+    }
+
+    public async Task SnoozeAsync()
+    {
+        await state.SnoozePlantAsync(DisplayPlant);
+
+        await OnDetailsChanged.InvokeAsync();
+    }
+
+    public string DisplayClass => Plant == null ? "hidden" : "";
+}

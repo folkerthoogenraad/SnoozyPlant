@@ -1,0 +1,77 @@
+﻿@using SnoozyPlants.App.Model
+@using SnoozyPlants.Core
+
+@inject ApplicationState state
+
+<div class="plant @(PlantClassList)" @onclick="OnClick">
+    <div class="thumbnail">
+        <img src="@Image.Url" alt="The image for the plant" />
+    </div>
+    <div class="plant-info">
+        <div class="plant-title">
+            <h3>@Plant.Name</h3>
+        </div>
+
+        <div class="plant-info-label-and-icon secondary">
+            <span class="icon icon-location"></span>
+            <span>@Plant.Location</span>
+        </div>
+
+        <div class="plant-info-label-and-icon secondary">
+            <span class="icon icon-water"></span>
+
+            @if (Plant.LastWateringDate.HasValue)
+            {
+                <span class="plant-info-text">@DateFormatter.FormatRelativeDate(Plant.LastWateringDate.Value)</span>
+            }
+            else
+            {
+                <span class="plant-info-text">Never.</span>
+            }
+        </div>
+    </div>
+    
+    @if(IsOverdue)
+    {
+        <span class="warning-icon icon-corner icon-warning"></span>
+    }
+
+    @if (IsUnscheduled)
+    {
+        <span class="info-icon icon-corner icon-calendar"></span>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Plant Plant { get; set; }
+
+    public PlantImage Image = PlantImage.Placeholder;
+
+    [Parameter]
+    public bool IsSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<Plant> OnSelect { get; set; }
+
+    protected override Task OnParametersSetAsync()
+    {
+        Image = state.GetPlantImageById(Plant.Id);
+
+        return base.OnParametersSetAsync();
+    }
+
+    public async Task OnClick()
+    {
+        await OnSelect.InvokeAsync(Plant);
+    }
+    
+    public bool IsDueToday => Plant.NextWateringDate == DateTime.Now.Date;
+
+    public bool IsOverdue => Plant.NextWateringDate < DateTime.Now.Date;
+
+    public bool IsUnscheduled => !Plant.NextWateringDate.HasValue;
+
+    private string PlantClassList => $"{(IsSelected ? "selected" : "")} {(IsDueToday ? "today" : "")} {(IsOverdue ? "overdue" : "")}";
+
+}

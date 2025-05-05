@@ -1,0 +1,11 @@
+.container {
+    --screen-margin-bottom: 10px;
+    --device-pixel-ratio: 1;
+    
+    transition: height ease-in-out 0.2s;
+
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: calc(100vh - var(--screen-margin-bottom) / var(--device-pixel-ratio));
+}

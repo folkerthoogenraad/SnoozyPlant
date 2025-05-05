@@ -1,0 +1,20 @@
+﻿
+
+html {
+    --border-radius: 8px;
+    --color-background-light: #00ff21;
+    --color-background-primary: var(--color-primary);
+    --color-background-primary: #7d956a;
+    --color-text: #343;
+    --color-text-secondary: #686;
+    --color-text-on-primary: #fff;
+    --color-primary: #78b462;
+    --color-primary-dark: #1b4a27;
+    --color-blue: #c2e6ef;
+    --color-blue-dark: #426791;
+    --color-warning: #f3bb54;
+    --color-orange: #ebe3bf;
+    --color-orange-dark: #634d3d;
+    --curve: cubic-bezier(.39,1.44,.76,.99);
+    color: var(--color-text);
+}

@@ -1,0 +1,129 @@
+﻿@page "/"
+
+@using SnoozyPlants.App.Model
+@using SnoozyPlants.Core
+@using SnoozyPlants.App.Components.Widgets
+
+@inject ApplicationState state
+
+<div class="application-container">
+
+    <h1>SnoozyPlants<small>beta</small></h1>
+
+    <div class="plant-list-container">
+
+        @if (state.Plants == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            bool first = true;
+            DateTime? nextWateringDate = null;
+
+            @foreach (var plant in state.Plants)
+            {
+                if(first || nextWateringDate != plant.NextWateringDate)
+                {
+                    nextWateringDate = plant.NextWateringDate;
+                    first = false;
+
+                    if (!nextWateringDate.HasValue)
+                    {
+                        <h2>Unscheduled</h2>
+                    }
+                    else if(nextWateringDate.Value < DateTime.Now.Date)
+                    {
+                        <h2>Overdue</h2>
+                    }
+                    else
+                    {
+                        <h2>@DateFormatter.FormatRelativeDate(nextWateringDate.Value)</h2>
+                    }
+                }
+
+                <PlantListItemComponent Plant="plant" IsSelected="plant == state.SelectedPlant" OnSelect="SelectPlant" />
+            }
+        }
+
+    </div>
+</div>
+
+<CreatePlantComponent OnCreate="CreateNew"></CreatePlantComponent>
+<PlantDetailsComponent Plant="state.SelectedPlant" OnClone="CloneSelected" OnDelete="DeleteSelected" OnEdit="StartEditPlant" OnDetailsChanged="StateHasChanged"></PlantDetailsComponent>
+<EditPlantComponent Plant="state.EditingPlant" OnCancel="CancelEditPlant" OnSave="AfterSavePlant" OnDelete="AfterDeletePlant" OnUpdate="StateHasChanged"></EditPlantComponent>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        await state.RefreshAsync();
+    }
+
+    public void SelectPlant(Plant plant)
+    {
+        if(state.SelectedPlant == plant)
+        {
+            state.SetSelected(null);
+            return;
+        }
+
+        state.SetSelected(plant);
+    }
+
+    public async Task CreateNew()
+    {
+        var plant = await state.CreatePlantAsync(new CreatePlantRequest()
+        {
+            Name = "",
+            Location = "",
+            WateringIntervalInDays = 2,
+        });
+
+        state.SetSelected(plant);
+        state.SetEditing(plant);
+    }
+
+    public async Task CloneSelected()
+    {
+        if (state.SelectedPlant == null) return;
+
+        await state.ClonePlantAsync(state.SelectedPlant);
+    }
+
+    public async Task DeleteSelected()
+    {
+        if (state.SelectedPlant == null) return;
+
+        await state.DeletePlantAsync(state.SelectedPlant);
+    }
+
+    public async Task AfterDeletePlant()
+    {
+        state.SetSelected(null);
+        state.SetEditing(null);
+    }
+
+    public Task StartEditPlant()
+    {
+        if (state.SelectedPlant == null) return Task.CompletedTask;
+
+        state.SetEditing(state.SelectedPlant);
+
+        return Task.CompletedTask;
+    }
+
+    public Task CancelEditPlant()
+    {
+        state.SetEditing(null);
+
+        return Task.CompletedTask;
+    }
+
+    public Task AfterSavePlant()
+    {
+        state.SetEditing(null);
+
+        return state.RefreshAsync();
+    }
+}

@@ -1,0 +1,34 @@
+﻿<div class="button-plus" @onclick="OnCreate">
+    <span class="icon-plus"></span>
+</div>
+
+<div class="background-dim @(DisplayClassBackgroundDim)" @onclick="Cancel"></div>
+
+<div class="create-plant-container  @(DisplayClassBackgroundDim)">
+    <div class="create-plant-content">
+        Hi! This is the create a plant form, but it has not yet been created...
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnCreate { get; set; }
+
+    public bool IsOpened = false;
+
+    public Task Start()
+    {
+        IsOpened = true;
+
+        return Task.CompletedTask;
+    }
+
+    public Task Cancel()
+    {
+        IsOpened = false;
+
+        return Task.CompletedTask;
+    }
+
+    public string DisplayClassBackgroundDim => !IsOpened ? "hidden" : "";
+}

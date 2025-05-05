@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "Windows": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    },
+    "Windows (watch)": {
+      "commandName": "Executable",
+      "workingDirectory": "$(ProjectDir)",
+      "executablePath": "dotnet",
+      "commandLineArgs": "watch run debug --launch-profile Windows"
+    }
+  }
+}

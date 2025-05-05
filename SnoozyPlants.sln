@@ -1,0 +1,31 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnoozyPlants.Core", "SnoozyPlants.Core\SnoozyPlants.Core.csproj", "{46DD5A08-A096-2B76-681B-ACD8A378D6E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnoozyPlants.App", "SnoozyPlants.App\SnoozyPlants.App.csproj", "{3E129DA1-8D20-4282-A829-9549F70ECBFC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{46DD5A08-A096-2B76-681B-ACD8A378D6E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46DD5A08-A096-2B76-681B-ACD8A378D6E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46DD5A08-A096-2B76-681B-ACD8A378D6E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46DD5A08-A096-2B76-681B-ACD8A378D6E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E129DA1-8D20-4282-A829-9549F70ECBFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E129DA1-8D20-4282-A829-9549F70ECBFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E129DA1-8D20-4282-A829-9549F70ECBFC}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{3E129DA1-8D20-4282-A829-9549F70ECBFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E129DA1-8D20-4282-A829-9549F70ECBFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {249CA4EB-BECE-463C-A64C-5830EBEAD51F}
+	EndGlobalSection
+EndGlobal

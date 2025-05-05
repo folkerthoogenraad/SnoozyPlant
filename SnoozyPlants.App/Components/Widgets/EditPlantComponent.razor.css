@@ -1,0 +1,121 @@
+
+.background-dim {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+
+    transition-property: background-color, visibility;
+    transition-duration: 0.2s;
+}
+
+.background-dim.hidden {
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.0);
+}
+
+
+.update-plant-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    flex-direction: column;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    overflow-y: scroll;
+
+    pointer-events: none;
+
+    transition-property: background-color, transform, opacity, visibility;
+    transition-duration: 0.4s;
+}
+
+.update-plant-container.hidden {
+    transform: translateY(40px);
+    opacity: 0;
+    visibility: hidden;
+}
+
+.update-plant-content {
+    padding: 0;
+    background: white;
+    border-radius: var(--border-radius);
+    pointer-events: auto;
+
+    margin-left: 15px;
+    margin-right: 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+
+    /*flex-grow:1;*/
+
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    position: relative;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    overflow:hidden;
+
+    width: 100%;
+    height: 128px;
+    min-height: 128px;
+}
+header img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    padding: 10px;
+}
+.form label {
+    display: flex;
+    flex-direction: column;
+
+    font-weight: bold;
+}
+
+input {
+    font-size: 14px;
+    font-family: inherit;
+    background: #eee;
+    border: none;
+
+    border-radius: var(--border-radius);
+
+    padding: 10px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px;
+}
+
+.spacer {
+    flex-grow: 1;
+}

@@ -1,0 +1,53 @@
+.button-primary {
+    border-radius: var(--border-radius);
+    
+    padding: 10px 20px;
+    
+    color: var(--color-text-on-primary);
+    background-color: var(--color-primary);
+
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-snooze {
+    border-radius: var(--border-radius);
+    padding: 10px 20px;
+    color: var(--color-orange-dark);
+    background-color: var(--color-orange);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-water {
+    border-radius: var(--border-radius);
+    padding: 10px 20px;
+    color: var(--color-blue-dark);
+    background-color: var(--color-blue);
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.button-link {
+    border-radius: var(--border-radius);
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 10px;
+    padding-right: 10px;
+
+    font-weight: bold;
+    color: var(--color-blue-dark);
+    cursor: pointer;
+}
+
+.button-link-danger {
+    border-radius: var(--border-radius);
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+
+    font-weight: bold;
+    color: #d11919;
+    cursor: pointer;
+}

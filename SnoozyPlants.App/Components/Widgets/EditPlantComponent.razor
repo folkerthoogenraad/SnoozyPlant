@@ -1,0 +1,138 @@
+﻿@using SnoozyPlants.App.Model
+@using SnoozyPlants.Core
+
+@inject ApplicationState state
+
+<div class="background-dim @(DisplayClassBackgroundDim)" @onclick="OnCancel"></div>
+
+<div class="update-plant-container  @(DisplayClassBackgroundDim)">
+    <div class="update-plant-content">
+        <header>
+            <img src="@Image.Url" alt="" @onclick="SetImage"/>
+        </header>
+
+        <div class="form">
+            <label>
+                <span>Name</span>
+                <input type="text" @bind="Name" />
+            </label>
+
+            <label>
+                <span>Latin name</span>
+                <input type="text" @bind="LatinName" />
+            </label>
+
+            <label>
+                <span>Location</span>
+                <input type="text" @bind="Location" />
+            </label>
+
+            <label>
+                <span>Watering interval in days</span>
+                <input type="number" @bind="WateringIntervalInDays" />
+            </label>
+        </div>
+
+        <div class="buttons">
+            <div class="button-link-danger" @onclick="Delete">Delete</div>
+            <div class="spacer"></div>
+            <div class="button-link" @onclick="OnCancel">Cancel</div>
+            <div class="button-primary" @onclick="Save">Save</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Plant? Plant { get; set; }
+
+    [Parameter]
+    public PlantImage Image { get; set; } = PlantImage.Placeholder;
+    
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnUpdate { get; set; }
+    
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    public string Name { get; set; }
+    public string LatinName { get; set; }
+    public string Location { get; set; }
+    public int WateringIntervalInDays { get; set; }
+    
+    public async Task Save()
+    {
+        await state.UpdatePlantAsync(Plant.Id, new UpdatePlantRequest()
+        {
+            Location = Location,
+            Name = Name,
+            LatinName = LatinName,
+            WateringIntervalInDays = WateringIntervalInDays,
+        });
+
+        await OnSave.InvokeAsync();
+    }
+    
+    public async Task Delete()
+    {
+        await state.DeletePlantAsync(Plant);
+
+        await OnDelete.InvokeAsync();
+    }
+    
+    public async Task SetImage()
+    {
+        // TODO error messages?
+        if (!MediaPicker.Default.IsCaptureSupported)
+        {
+            return;
+        }
+
+        var result = await MediaPicker.CapturePhotoAsync();
+
+        // TODO error messages
+        if(result == null)
+        {
+            return;
+        }
+        
+        if(Plant == null) return;
+
+        await using var stream = await result.OpenReadAsync();
+
+        await Task.Run(async () => {
+            await state.SetPlantImageStream(Plant.Id, stream);
+        });
+
+
+        Image = state.GetPlantImageById(Plant.Id);
+
+        await OnUpdate.InvokeAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if(Plant == null)
+        {
+            return;
+        }
+
+        Image = state.GetPlantImageById(Plant.Id);
+
+        Name = Plant.Name;
+        LatinName = Plant.LatinName ?? "";
+        Location = Plant.Location;
+        WateringIntervalInDays = Plant.WateringIntervalInDays;
+    }
+
+    public string DisplayClassBackgroundDim => Plant == null ? "hidden" : "";
+
+}

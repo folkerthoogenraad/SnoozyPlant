@@ -1,0 +1,32 @@
+.plant-list-container{
+    max-height: 100%;
+    overflow-y: scroll;
+
+    padding: 15px;
+}
+
+.application-container {
+    width: 100%;
+
+    min-height: 100%;
+    max-height: 100%;
+
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    margin: 0;
+    padding-top: 50px;
+    padding-bottom: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    padding-top: 20px;
+    padding-bottom: 8px;
+
+    font-weight: lighter;
+}
