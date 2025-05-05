@@ -7,9 +7,6 @@ namespace SnoozyPlants.App
         public App()
         {
             InitializeComponent();
-
-            // this doen't work with the fullscreen stuff...
-             //On<Microsoft.Maui.Controls.PlatformConfiguration.Android>().UseWindowSoftInputModeAdjust(WindowSoftInputModeAdjust.Resize);
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

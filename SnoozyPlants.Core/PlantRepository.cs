@@ -1,26 +1,25 @@
 using AutoMapper;
 using SQLite;
 using System.Diagnostics;
+using static SQLite.SQLite3;
 
 namespace SnoozyPlants.Core;
 
 public class PlantRepository 
 {
+    private bool _databaseCreated;
     private SQLiteConnection _connection;
+
     private IMapper _mapper;
 
-    private Dictionary<PlantId, DbPlantImage> _images = new();
+    private Dictionary<PlantId, Task<DbPlantImage?>> _images = new();
 
     public PlantRepository(PlantDatabaseConfiguration config)
     {
-        bool seed = !File.Exists(config.FilePath);
+        _databaseCreated = !File.Exists(config.FilePath);
 
         var options = new SQLiteConnectionString(config.FilePath, true);
         _connection = new SQLiteConnection(options);
-
-        _connection.CreateTable<DbPlant>();
-        _connection.CreateTable<DbPlantEvent>();
-        _connection.CreateTable<DbPlantImage>();
 
         var configuration = new MapperConfiguration(cfg => {
             cfg.AddProfile<PlantAutoMapperProfile>();
@@ -28,13 +27,11 @@ public class PlantRepository
 
         _mapper = configuration.CreateMapper();
 
-        if (seed)
-        {
-            SeedDatabase();
-        }
+        // This is really _amazingly_ stupid, but whatever.
+        MigrateAsync().GetAwaiter().GetResult();
     }
 
-    public PlantId CreatePlant(CreatePlantRequest request)
+    public async Task<PlantId> CreatePlantAsync(CreatePlantRequest request)
     {
         var plant = new DbPlant()
         {
@@ -48,12 +45,12 @@ public class PlantRepository
         return new PlantId(plant.Id);
     }
 
-    public Plant[] GetPlants()
+    public async Task<Plant[]> GetPlantsAsync()
     {
         return _connection.Table<DbPlant>().Select(_mapper.Map<Plant>).ToArray();
     }
 
-    public Plant? GetPlantById(PlantId id)
+    public async Task<Plant?> GetPlantByIdAsync(PlantId id)
     {
         var result = _connection.Table<DbPlant>().FirstOrDefault(x => x.Id == id.Value);
 
@@ -65,23 +62,46 @@ public class PlantRepository
         return _mapper.Map<Plant>(result);
     }
 
-    public PlantImage? GetPlantImageById(PlantId id)
+    public Task<PlantImage?> GetPlantImageByIdAsync(PlantId id)
     {
-        if(_images.TryGetValue(id, out var image))
+        lock (_images)
         {
-            return _mapper.Map<PlantImage>(image);
+            if (_images.TryGetValue(id, out var image))
+            {
+                return MapPlantImage(image);
+            }
+
+            var task = LoadImage(id);
+
+            _images.Add(id, task);
+
+            return MapPlantImage(task);
         }
-
-        var result = _connection.Table<DbPlantImage>().FirstOrDefault(x => x.PlantId == id.Value);
-
-        _images.Add(id, result);
-
-        return _mapper.Map<PlantImage>(result);
     }
 
-    public void SetPlantImageUrl(PlantId id, string url)
+    private async Task<PlantImage?> MapPlantImage(Task<DbPlantImage?> plantImageTask)
     {
-        var result = GetPlantImageById(id);
+        var plantImage = await plantImageTask;
+
+        if(plantImage == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<PlantImage?>(plantImage);
+    }
+
+    private async Task<DbPlantImage?> LoadImage(PlantId plantId)
+    {
+        var result = _connection.Table<DbPlantImage>().FirstOrDefault(x => x.PlantId == plantId.Value);
+
+        return result;
+
+    }
+
+    public async Task SetPlantImageUrlAsync(PlantId id, string url)
+    {
+        var result = await GetPlantImageByIdAsync(id);
 
         var plantImage = new DbPlantImage() { PlantId = id.Value, Url = url };
 
@@ -94,10 +114,10 @@ public class PlantRepository
             _connection.Update(plantImage);
         }
 
-        _images[id] = plantImage;
+        _images[id] = Task.FromResult<DbPlantImage?>(plantImage);
     }
 
-    public void WaterPlantById(PlantId plantId)
+    public async Task WaterPlantByIdAsync(PlantId plantId)
     {
         var now = DateTime.Now;
         var date = now.Date;
@@ -119,7 +139,7 @@ public class PlantRepository
         _connection.Update(plant);
     }
 
-    public void SnoozePlantById(PlantId plantId)
+    public async Task SnoozePlantByIdAsync(PlantId plantId)
     {
         // TODO validation? Becuase now you can snooze a plant in the future to get it on your list tomorrow. Silly?
         var now = DateTime.Now;
@@ -141,7 +161,7 @@ public class PlantRepository
         _connection.Update(plant);
     }
 
-    public void UpdatePlant(PlantId id, UpdatePlantRequest request)
+    public async Task UpdatePlantAsync(PlantId id, UpdatePlantRequest request)
     {
         var plant = _connection.Get<DbPlant>(id.Value);
 
@@ -155,7 +175,7 @@ public class PlantRepository
         _connection.Update(plant);
     }
 
-    public void DeletePlant(PlantId id)
+    public async Task DeletePlantAsync(PlantId id)
     {
         _connection.Delete<DbPlant>(id.Value);
 
@@ -170,9 +190,21 @@ public class PlantRepository
         }
     }
 
-    public void SeedDatabase()
+    public async Task MigrateAsync()
     {
-        CreatePlant(new CreatePlantRequest() { Name = "Pannekoekplant", Location = "Op de kast, beneden", WateringIntervalInDays = 4, LatinName = "" });
-        CreatePlant(new CreatePlantRequest() { Name = "Bonsai", Location = "Raamkozijn, boven", WateringIntervalInDays = 7, LatinName = "" });
+        _connection.CreateTable<DbPlant>();
+        _connection.CreateTable<DbPlantEvent>();
+        _connection.CreateTable<DbPlantImage>();
+
+        if (_databaseCreated)
+        {
+            await SeedDatabaseAsync();
+        }
+    }
+
+    public async Task SeedDatabaseAsync()
+    {
+        await CreatePlantAsync(new CreatePlantRequest() { Name = "Pannekoekplant", Location = "Op de kast, beneden", WateringIntervalInDays = 4, LatinName = "" });
+        await CreatePlantAsync(new CreatePlantRequest() { Name = "Bonsai", Location = "Raamkozijn, boven", WateringIntervalInDays = 7, LatinName = "" });
     }
 }

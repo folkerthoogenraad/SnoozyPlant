@@ -8,7 +8,7 @@
 <div class="update-plant-container  @(DisplayClassBackgroundDim)">
     <div class="update-plant-content">
         <header>
-            <img src="@Image.Url" alt="" @onclick="SetImage"/>
+            <img loading="lazy" src="@Image.Url" alt="" @onclick="SetImage"/>
         </header>
 
         <div class="form">
@@ -111,7 +111,7 @@
         });
 
 
-        Image = state.GetPlantImageById(Plant.Id);
+        Image = await state.GetPlantImageByIdAsync(Plant.Id);
 
         await OnUpdate.InvokeAsync();
     }
@@ -125,12 +125,12 @@
             return;
         }
 
-        Image = state.GetPlantImageById(Plant.Id);
-
         Name = Plant.Name;
         LatinName = Plant.LatinName ?? "";
         Location = Plant.Location;
         WateringIntervalInDays = Plant.WateringIntervalInDays;
+
+        Image = await state.GetPlantImageByIdAsync(Plant.Id);
     }
 
     public string DisplayClassBackgroundDim => Plant == null ? "hidden" : "";

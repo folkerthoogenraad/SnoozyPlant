@@ -3,7 +3,6 @@ using Android.Content.PM;
 using Android.OS;
 using Android.Util;
 using Android.Views;
-using Java.Interop;
 using SnoozyPlants.App.Model;
 using static Android.Views.View;
 

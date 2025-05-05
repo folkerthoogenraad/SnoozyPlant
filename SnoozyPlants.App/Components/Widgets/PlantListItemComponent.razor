@@ -5,7 +5,7 @@
 
 <div class="plant @(PlantClassList)" @onclick="OnClick">
     <div class="thumbnail">
-        <img src="@Image.Url" alt="The image for the plant" />
+        <img loading="lazy" src="@Image.Url" alt="The image for the plant" />
     </div>
     <div class="plant-info">
         <div class="plant-title">
@@ -54,11 +54,11 @@
     [Parameter]
     public EventCallback<Plant> OnSelect { get; set; }
 
-    protected override Task OnParametersSetAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        Image = state.GetPlantImageById(Plant.Id);
+        Image = await state.GetPlantImageByIdAsync(Plant.Id);
 
-        return base.OnParametersSetAsync();
+        await base.OnParametersSetAsync();
     }
 
     public async Task OnClick()

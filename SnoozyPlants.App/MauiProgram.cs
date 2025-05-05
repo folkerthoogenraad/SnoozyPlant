@@ -14,7 +14,6 @@ namespace SnoozyPlants.App
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("BubblegumSans-Regular.ttf", "BubblegumSans");
                 });
 
             builder.Services.AddMauiBlazorWebView();

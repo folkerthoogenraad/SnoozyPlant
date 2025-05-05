@@ -10,7 +10,7 @@
     <div class="details @(DisplayClass)">
         <div class="horizontal">
             <div class="thumbnail">
-                <img src="@Image.Url" />
+                <img loading="lazy" src="@Image.Url" />
             </div>
 
             <div class="plant-info">
@@ -115,13 +115,15 @@
         }
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
+        await base.OnParametersSetAsync();
+
         if(Plant != null)
         {
             DisplayPlant = Plant;
 
-            Image = state.GetPlantImageById(DisplayPlant.Id);
+            Image = await state.GetPlantImageByIdAsync(DisplayPlant.Id);
         }
     }
 

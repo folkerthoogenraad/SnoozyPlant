@@ -38,7 +38,7 @@ internal class ApplicationState
 
     public async Task<Plant> CreatePlantAsync(CreatePlantRequest request)
     {
-        var id = _repository.CreatePlant( request);
+        var id = await _repository.CreatePlantAsync( request);
 
         await RefreshAsync();
 
@@ -47,14 +47,14 @@ internal class ApplicationState
 
     public async Task UpdatePlantAsync(PlantId plantId, UpdatePlantRequest request)
     {
-        _repository.UpdatePlant(plantId, request);
+        await _repository.UpdatePlantAsync(plantId, request);
 
         await RefreshAsync();
     }
 
-    public PlantImage GetPlantImageById(PlantId plantId)
+    public async Task<PlantImage> GetPlantImageByIdAsync(PlantId plantId)
     {
-        var plantImage = _repository.GetPlantImageById(plantId);
+        var plantImage = await _repository.GetPlantImageByIdAsync(plantId);
 
         if(plantImage == null)
         {
@@ -70,8 +70,8 @@ internal class ApplicationState
         {
             using var image = PlatformImage.FromStream(fileStream);
 
-            using var downsized = image.Downsize(256);
-
+            using var downsized = image.Downsize(600);
+            
             using var memoryStream = new MemoryStream();
 
             await downsized.SaveAsync(memoryStream, ImageFormat.Jpeg, 0.8f);
@@ -79,6 +79,8 @@ internal class ApplicationState
             string base64 = Convert.ToBase64String(memoryStream.ToArray());
 
             var dataUrl = $"data:image/png;base64,{base64}";
+
+            Debug.WriteLine(dataUrl.Length);
 
             await SetPlantImageUrlAsync(plantId, dataUrl);
         }
@@ -91,14 +93,14 @@ internal class ApplicationState
 
     public async Task SetPlantImageUrlAsync(PlantId plantId, string url)
     {
-        _repository.SetPlantImageUrl(plantId, url);
+        await _repository.SetPlantImageUrlAsync(plantId, url);
 
         await RefreshAsync();
     }
 
     public async Task DeletePlantAsync(Plant plant)
     {
-        _repository.DeletePlant(plant.Id);
+        await _repository.DeletePlantAsync(plant.Id);
 
         _selectedPlant = null;
 
@@ -107,7 +109,7 @@ internal class ApplicationState
 
     public async Task ClonePlantAsync(Plant plant)
     {
-        var newId = _repository.CreatePlant(new CreatePlantRequest()
+        var newId = await _repository.CreatePlantAsync(new CreatePlantRequest()
         {
             Name = plant.Name,
             LatinName = plant.LatinName,
@@ -121,7 +123,7 @@ internal class ApplicationState
 
     public async Task WaterPlantAsync(Plant plant)
     {
-        _repository.WaterPlantById(plant.Id);
+        await _repository.WaterPlantByIdAsync(plant.Id);
 
         await RefreshAsync();
 
@@ -130,7 +132,7 @@ internal class ApplicationState
 
     public async Task SnoozePlantAsync(Plant plant)
     {
-        _repository.SnoozePlantById(plant.Id);
+        await _repository.SnoozePlantByIdAsync(plant.Id);
 
         await RefreshAsync();
 
@@ -152,9 +154,9 @@ internal class ApplicationState
         _editingPlant = editing;
     }
 
-    public Task RefreshAsync()
+    public async Task RefreshAsync()
     {
-        _plants = _repository.GetPlants().OrderBy(x => x.NextWateringDate).ToArray();
+        _plants = (await _repository.GetPlantsAsync()).OrderBy(x => x.NextWateringDate).ToArray();
 
         if (_selectedPlant != null)
         {
@@ -165,7 +167,5 @@ internal class ApplicationState
         {
             _editingPlant = GetPlantById(_editingPlant.Id);
         }
-
-        return Task.CompletedTask;
     }
 }
