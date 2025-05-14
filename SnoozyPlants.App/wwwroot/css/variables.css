@@ -15,6 +15,10 @@ html {
     --color-warning: #f3bb54;
     --color-orange: #ebe3bf;
     --color-orange-dark: #634d3d;
+    
+    --color-input-background: #eee;
+    --color-input-white: #fff;
+    
     --curve: cubic-bezier(.39,1.44,.76,.99);
     color: var(--color-text);
 }

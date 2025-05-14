@@ -1,0 +1,73 @@
+﻿@page "/settings"
+@using System.Diagnostics
+@using SnoozyPlants.App.Model
+
+@inject AppSettings appSettings
+@inject IPlantNotifications notifications
+
+<div class="settings-container">
+    <h2>Notification Settings</h2>
+
+    <p>With notifications enabled, you'll get a daily notification when any plant needs to be wattered. The notification triggers at 8:00 in the morning. </p>
+
+    <label>
+        Notifications enabled
+
+        <div class="checkbox">
+            <input type="checkbox" @bind="NotificationsEnabled" />
+        </div>
+    </label>
+
+    <p class="small">
+        @if (_notificationsRegistered)
+        {
+            <span>Notification has been registered. </span>
+        }
+
+        @if (_lastBootNotification != DateTime.MinValue)
+        {
+            <span>Last reboot to enable notifications @DateFormatter.FormatRelativeDate(@_lastBootNotification).</span>
+        }
+     </p>
+</div>
+
+@code {
+    private bool _notificationsRegistered = false;
+    private bool _notificationsEnabled = false;
+
+    private DateTime _lastBootNotification = DateTime.UtcNow;
+
+    public bool NotificationsEnabled
+    {
+        get 
+        { 
+            return _notificationsEnabled;
+        }
+        set
+        {
+            _notificationsEnabled = value;
+            OnNotificationsEnabledChanged();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _notificationsEnabled = await appSettings.AreNotificationsEnabled();
+        _notificationsRegistered = await notifications.AreNotificationsEnabled();
+        _lastBootNotification = await appSettings.GetLastBootNotification();
+
+        StateHasChanged();
+    }
+
+    public async Task OnNotificationsEnabledChanged()
+    {
+        await appSettings.SetNotificationsEnabled(_notificationsEnabled);
+
+        _notificationsEnabled = await appSettings.AreNotificationsEnabled();
+        _notificationsRegistered = await notifications.AreNotificationsEnabled();
+
+        StateHasChanged();
+    }
+}

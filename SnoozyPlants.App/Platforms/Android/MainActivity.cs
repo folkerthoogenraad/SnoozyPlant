@@ -1,6 +1,8 @@
 ﻿using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
+using Android.Telephony.Data;
 using Android.Util;
 using Android.Views;
 using SnoozyPlants.App.Model;
@@ -62,10 +64,23 @@ namespace SnoozyPlants.App
     [Activity(Theme = "@style/SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
-
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
+
+            var settings = IPlatformApplication.Current?.Services.GetService<AppSettings>();
+            var service = IPlatformApplication.Current?.Services.GetService<IPlantNotifications>();
+
+            if (settings != null)
+            {
+
+                settings.SyncNotifications().GetAwaiter().GetResult();
+            }
+
+            if (service != null)
+            {
+                service.CancelNotification();
+            }
 
             var view = Window?.DecorView;
 
@@ -81,16 +96,35 @@ namespace SnoozyPlants.App
                 view.SetOnApplyWindowInsetsListener(new Test());
             }
 
-            //Window?.SetDecorFitsSystemWindows(false);
-
-            // This works, but doesn't work with the scaling adjust... :')
-            //Window?.AddFlags(Android.Views.WindowManagerFlags.LayoutNoLimits);
-
-            //Window?.DecorView?.WindowInsetsController?.Hide(0);
-
             Window?.AddFlags(WindowManagerFlags.LayoutNoLimits);
-            //Window?.AddFlags(Android.Views.WindowManagerFlags.TranslucentNavigation);
-            //Window?.AddFlags(Android.Views.WindowManagerFlags.TranslucentStatus);
         }
+
+        protected override void OnNewIntent(Intent? intent)
+        {
+            base.OnNewIntent(intent);
+
+            CreateNotificationFromIntent(intent);
+        }
+
+        static void CreateNotificationFromIntent(Intent ?intent)
+        {
+            if (intent == null) return;
+            if (intent?.Extras == null) return;
+
+            string? title = intent.GetStringExtra(PlantNotifications.NotificationTitleKey);
+            string? message = intent.GetStringExtra(PlantNotifications.NotificationBodyKey);
+
+            if (title == null || message == null)
+            {
+                return;
+            }
+
+            if (IPlatformApplication.Current == null) return;
+
+            var service = IPlatformApplication.Current.Services.GetService<IPlantNotifications>();
+
+            service?.CancelNotification();
+        }
+
     }
 }

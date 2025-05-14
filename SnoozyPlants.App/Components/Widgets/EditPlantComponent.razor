@@ -1,5 +1,6 @@
 ﻿@using SnoozyPlants.App.Model
 @using SnoozyPlants.Core
+@using System.Diagnostics
 
 @inject ApplicationState state
 
@@ -8,7 +9,14 @@
 <div class="update-plant-container  @(DisplayClassBackgroundDim)">
     <div class="update-plant-content">
         <header>
-            <img loading="lazy" src="@Image.Url" alt="" @onclick="SetImage"/>
+            @if (ImageLoading)
+            {
+                <div>Loading...</div>
+            }
+            else
+            {
+                <img loading="lazy" src="@PlantImageUrl" alt="" @onclick="SetImage"/>
+            }
         </header>
 
         <div class="form">
@@ -47,9 +55,6 @@
     public Plant? Plant { get; set; }
 
     [Parameter]
-    public PlantImage Image { get; set; } = PlantImage.Placeholder;
-    
-    [Parameter]
     public EventCallback OnCancel { get; set; }
 
     [Parameter]
@@ -57,15 +62,19 @@
 
     [Parameter]
     public EventCallback OnUpdate { get; set; }
-    
+
     [Parameter]
     public EventCallback OnDelete { get; set; }
 
+    public bool ImageLoading = false;
+
+    public PlantId PlantId { get; set; }
     public string Name { get; set; }
+    public string PlantImageUrl { get; set; }
     public string LatinName { get; set; }
     public string Location { get; set; }
     public int WateringIntervalInDays { get; set; }
-    
+
     public async Task Save()
     {
         await state.UpdatePlantAsync(Plant.Id, new UpdatePlantRequest()
@@ -78,42 +87,68 @@
 
         await OnSave.InvokeAsync();
     }
-    
+
     public async Task Delete()
     {
         await state.DeletePlantAsync(Plant);
 
         await OnDelete.InvokeAsync();
     }
-    
+
     public async Task SetImage()
     {
-        // TODO error messages?
+        // TODO: Set loader?
+        // TODO: error messages?
         if (!MediaPicker.Default.IsCaptureSupported)
         {
             return;
         }
 
-        var result = await MediaPicker.CapturePhotoAsync();
-
-        // TODO error messages
-        if(result == null)
+        if (ImageLoading)
         {
             return;
         }
-        
-        if(Plant == null) return;
 
-        await using var stream = await result.OpenReadAsync();
+        try
+        {
+            ImageLoading = true;
 
-        await Task.Run(async () => {
-            await state.SetPlantImageStream(Plant.Id, stream);
-        });
+            var result = await MediaPicker.CapturePhotoAsync();
 
+            PlantImageUrl = state.GetPlantImageMissingAsync(Plant.Id);
+            StateHasChanged();
 
-        Image = await state.GetPlantImageByIdAsync(Plant.Id);
+            // TODO error messages
+            if (result == null)
+            {
+                return;
+            }
 
-        await OnUpdate.InvokeAsync();
+            if (Plant == null) return;
+
+            await using var stream = await result.OpenReadAsync();
+
+            await Task.Run(async () =>
+            {
+                await state.SetPlantImageStream(Plant.Id, stream);
+            });
+
+            PlantImageUrl = await state.GetPlantImageUrlByIdAsync(Plant.Id);
+
+            ImageLoading = false;
+
+            StateHasChanged();
+
+            await OnUpdate.InvokeAsync();
+        }
+        catch(Exception ex)
+        {
+            Debug.WriteLine(ex.Message);
+        }
+        finally
+        {
+            ImageLoading = false;
+        }
     }
 
     protected override async Task OnParametersSetAsync()
@@ -125,12 +160,19 @@
             return;
         }
 
+        if(Plant.Id == PlantId)
+        {
+            return;
+        }
+
+        PlantId = Plant.Id;
+
         Name = Plant.Name;
         LatinName = Plant.LatinName ?? "";
         Location = Plant.Location;
         WateringIntervalInDays = Plant.WateringIntervalInDays;
 
-        Image = await state.GetPlantImageByIdAsync(Plant.Id);
+        PlantImageUrl = await state.GetPlantImageUrlByIdAsync(Plant.Id);
     }
 
     public string DisplayClassBackgroundDim => Plant == null ? "hidden" : "";

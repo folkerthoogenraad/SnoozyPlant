@@ -9,12 +9,8 @@ namespace SnoozyPlants.Core;
 
 public record PlantImage
 {
-    public PlantId PlantId { get; init; }
-
-    public string Url { get; init; }
-
-
-    public static readonly PlantImage Placeholder = new PlantImage() { Url = "/images/missing.png" };
+    public string MimeType { get; set; }
+    public byte[]? Data { get; set; }
 }
 
 internal record DbPlantImage
@@ -22,5 +18,9 @@ internal record DbPlantImage
     [PrimaryKey]
     public Guid PlantId { get; set; }
 
-    public string Url { get; set; }
+    public Guid Version { get; set; }
+
+    public string MimeType { get; set; }
+
+    public byte[]? Data { get; set; }
 }

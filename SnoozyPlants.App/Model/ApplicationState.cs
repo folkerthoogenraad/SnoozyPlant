@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Graphics.Platform;
+using SnoozyPlants.App.Server;
 using SnoozyPlants.Core;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace SnoozyPlants.App.Model;
 internal class ApplicationState
 {
     private readonly PlantRepository _repository;
+    private readonly PlantImageServer _server;
 
     private Plant[]? _plants;
     private Plant? _selectedPlant;
@@ -21,9 +23,10 @@ internal class ApplicationState
     public Plant? SelectedPlant => _selectedPlant;
     public Plant? EditingPlant => _editingPlant;
 
-    public ApplicationState(PlantRepository repository)
+    public ApplicationState(PlantRepository repository, PlantImageServer server)
     {
         _repository = repository;
+        _server = server;
     }
 
     public Plant? GetPlantById(PlantId plantId)
@@ -52,16 +55,21 @@ internal class ApplicationState
         await RefreshAsync();
     }
 
-    public async Task<PlantImage> GetPlantImageByIdAsync(PlantId plantId)
+    public async Task<string> GetPlantImageUrlByIdAsync(PlantId plantId)
     {
-        var plantImage = await _repository.GetPlantImageByIdAsync(plantId);
+        var versionGuid = await _repository.GetPlantImageVersionAsync(plantId);
 
-        if(plantImage == null)
+        if (!versionGuid.HasValue)
         {
-            return PlantImage.Placeholder;
+            return "/images/missing.svg";
         }
 
-        return plantImage;
+        return _server.CreateImageUrl(plantId, versionGuid.Value);
+    }
+
+    public string GetPlantImageMissingAsync(PlantId plantId)
+    {
+        return "/images/missing.svg";
     }
 
     public async Task SetPlantImageStream(PlantId plantId, Stream fileStream)
@@ -70,32 +78,23 @@ internal class ApplicationState
         {
             using var image = PlatformImage.FromStream(fileStream);
 
-            using var downsized = image.Downsize(600);
+            using var downsized = image.Downsize(1024);
             
             using var memoryStream = new MemoryStream();
 
             await downsized.SaveAsync(memoryStream, ImageFormat.Jpeg, 0.8f);
 
-            string base64 = Convert.ToBase64String(memoryStream.ToArray());
-
-            var dataUrl = $"data:image/png;base64,{base64}";
-
-            Debug.WriteLine(dataUrl.Length);
-
-            await SetPlantImageUrlAsync(plantId, dataUrl);
+            await _repository.SetPlantImageAsync(plantId, new PlantImage()
+            {
+                Data = memoryStream.ToArray(),
+                MimeType = "image/jpg"
+            });
         }
         catch(Exception ex)
         {
             Debug.WriteLine(ex.Message);
         }
 
-    }
-
-    public async Task SetPlantImageUrlAsync(PlantId plantId, string url)
-    {
-        await _repository.SetPlantImageUrlAsync(plantId, url);
-
-        await RefreshAsync();
     }
 
     public async Task DeletePlantAsync(Plant plant)

@@ -1,11 +1,12 @@
 ﻿@using SnoozyPlants.App.Model
+@using SnoozyPlants.App.Server
 @using SnoozyPlants.Core
 
 @inject ApplicationState state
 
 <div class="plant @(PlantClassList)" @onclick="OnClick">
     <div class="thumbnail">
-        <img loading="lazy" src="@Image.Url" alt="The image for the plant" />
+        <img loading="lazy" src="@PlantImageUrl" alt="The image for the plant" />
     </div>
     <div class="plant-info">
         <div class="plant-title">
@@ -30,7 +31,7 @@
             }
         </div>
     </div>
-    
+
     @if(IsOverdue)
     {
         <span class="warning-icon icon-corner icon-warning"></span>
@@ -46,7 +47,7 @@
     [Parameter]
     public Plant Plant { get; set; }
 
-    public PlantImage Image = PlantImage.Placeholder;
+    public string PlantImageUrl { get; set; }
 
     [Parameter]
     public bool IsSelected { get; set; }
@@ -56,9 +57,9 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        Image = await state.GetPlantImageByIdAsync(Plant.Id);
-
         await base.OnParametersSetAsync();
+
+        PlantImageUrl = await state.GetPlantImageUrlByIdAsync(Plant.Id);
     }
 
     public async Task OnClick()

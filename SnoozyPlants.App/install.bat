@@ -1,0 +1,1 @@
+adb install -r bin/Debug/net9.0-android/justf.snoozyplants-Signed.apk

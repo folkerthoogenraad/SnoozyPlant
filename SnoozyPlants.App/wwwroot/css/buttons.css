@@ -51,3 +51,10 @@
     color: #d11919;
     cursor: pointer;
 }
+
+.button-settings {
+    display: flex;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+}

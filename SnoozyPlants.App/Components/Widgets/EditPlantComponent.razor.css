@@ -69,6 +69,10 @@ header {
     width: 100%;
     height: 300px;
     min-height: 128px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 header img {
     position: absolute;
@@ -98,7 +102,7 @@ header img {
 input {
     font-size: 14px;
     font-family: inherit;
-    background: #eee;
+    background: var(--color-input-background);
     border: none;
 
     border-radius: var(--border-radius);

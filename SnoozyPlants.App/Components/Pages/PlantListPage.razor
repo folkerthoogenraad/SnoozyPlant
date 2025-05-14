@@ -8,7 +8,16 @@
 
 <div class="application-container">
 
-    <h1>SnoozyPlants<small>beta</small></h1>
+    <header>
+        <div class="container">
+            <img src="/images/logo.svg"/>
+            <div class="sidebar">
+                <NavLink class="button-settings" href="/settings">
+                    <span class="icon-cog"></span>
+                </NavLink>
+            </div>
+        </div>
+    </header>
 
     <div class="plant-list-container">
 
@@ -19,11 +28,12 @@
         else
         {
             bool first = true;
+            bool wasOverdue = false;
             DateTime? nextWateringDate = null;
 
             @foreach (var plant in state.Plants)
             {
-                if(first || nextWateringDate != plant.NextWateringDate)
+                if (first || nextWateringDate != plant.NextWateringDate)
                 {
                     nextWateringDate = plant.NextWateringDate;
                     first = false;
@@ -34,6 +44,7 @@
                     }
                     else if(nextWateringDate.Value < DateTime.Now.Date)
                     {
+                        wasOverdue = true;
                         <h2>Overdue</h2>
                     }
                     else

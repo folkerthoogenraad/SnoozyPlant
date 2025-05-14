@@ -10,7 +10,7 @@
     <div class="details @(DisplayClass)">
         <div class="horizontal">
             <div class="thumbnail">
-                <img loading="lazy" src="@Image.Url" />
+                <img loading="lazy" src="@PlantImageUrl" />
             </div>
 
             <div class="plant-info">
@@ -90,8 +90,7 @@
     [Parameter]
     public Plant DisplayPlant { get; set; } = Plant.Placeholder;
 
-    [Parameter]
-    public PlantImage Image { get; set; } = PlantImage.Placeholder;
+    public string? PlantImageUrl { get; set; }
 
     [Parameter]
     public EventCallback OnClone { get; set; }
@@ -123,7 +122,9 @@
         {
             DisplayPlant = Plant;
 
-            Image = await state.GetPlantImageByIdAsync(DisplayPlant.Id);
+            PlantImageUrl = state.GetPlantImageMissingAsync(Plant.Id);
+
+            PlantImageUrl = await state.GetPlantImageUrlByIdAsync(DisplayPlant.Id);
         }
     }
 

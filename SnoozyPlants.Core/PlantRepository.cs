@@ -1,7 +1,6 @@
 using AutoMapper;
 using SQLite;
 using System.Diagnostics;
-using static SQLite.SQLite3;
 
 namespace SnoozyPlants.Core;
 
@@ -12,7 +11,10 @@ public class PlantRepository
 
     private IMapper _mapper;
 
-    private Dictionary<PlantId, Task<DbPlantImage?>> _images = new();
+    private record DataQueryResult<T>
+    {
+        public T Data { get; set; }
+    }
 
     public PlantRepository(PlantDatabaseConfiguration config)
     {
@@ -62,48 +64,36 @@ public class PlantRepository
         return _mapper.Map<Plant>(result);
     }
 
-    public Task<PlantImage?> GetPlantImageByIdAsync(PlantId id)
+    public async Task<Guid?> GetPlantImageVersionAsync(PlantId id)
     {
-        lock (_images)
-        {
-            if (_images.TryGetValue(id, out var image))
-            {
-                return MapPlantImage(image);
-            }
+        var result = _connection.Query<DataQueryResult<Guid>>("SELECT Version as Data FROM DbPlantImage WHERE PlantId = ?", [id.Value]).Select(x => x.Data).ToArray();
 
-            var task = LoadImage(id);
+        if (result.Length == 0) return null;
 
-            _images.Add(id, task);
-
-            return MapPlantImage(task);
-        }
+        return result[0];
     }
 
-    private async Task<PlantImage?> MapPlantImage(Task<DbPlantImage?> plantImageTask)
+    public async Task<PlantImage?> GetPlantImageAsync(PlantId id)
     {
-        var plantImage = await plantImageTask;
+        var result = _connection.Table<DbPlantImage>().Where(x => x.PlantId == id.Value).FirstOrDefault();
 
-        if(plantImage == null)
+        if(result == null)
         {
             return null;
         }
 
-        return _mapper.Map<PlantImage?>(plantImage);
+        return new PlantImage()
+        {
+            Data = result.Data,
+            MimeType = result.MimeType
+        };
     }
 
-    private async Task<DbPlantImage?> LoadImage(PlantId plantId)
+    public async Task SetPlantImageAsync(PlantId id, PlantImage image)
     {
-        var result = _connection.Table<DbPlantImage>().FirstOrDefault(x => x.PlantId == plantId.Value);
+        var result = _connection.Table<DbPlantImage>().Where(x => x.PlantId == id.Value).FirstOrDefault();
 
-        return result;
-
-    }
-
-    public async Task SetPlantImageUrlAsync(PlantId id, string url)
-    {
-        var result = await GetPlantImageByIdAsync(id);
-
-        var plantImage = new DbPlantImage() { PlantId = id.Value, Url = url };
+        var plantImage = new DbPlantImage() { PlantId = id.Value, MimeType = image.MimeType, Data = image.Data, Version = Guid.NewGuid() };
 
         if(result == null)
         {
@@ -113,8 +103,6 @@ public class PlantRepository
         {
             _connection.Update(plantImage);
         }
-
-        _images[id] = Task.FromResult<DbPlantImage?>(plantImage);
     }
 
     public async Task WaterPlantByIdAsync(PlantId plantId)
@@ -190,21 +178,118 @@ public class PlantRepository
         }
     }
 
+    public async Task SetSettingAsync(string key, string value)
+    {
+        var setting = _connection.Table<DbPlantSetting>().FirstOrDefault(x => x.Key == key);
+
+        if(setting == null)
+        {
+            setting = new DbPlantSetting()
+            {
+                Key = key,
+                Value = value
+            };
+
+            _connection.Insert(setting);
+        }
+        else
+        {
+            setting.Value = value;
+
+            _connection.Update(setting);
+        }
+    }
+
+    public async Task<string?> GetSettingAsync(string key)
+    {
+        var setting = _connection.Table<DbPlantSetting>().FirstOrDefault(x => x.Key == key);
+
+        return setting?.Value;
+    }
+
     public async Task MigrateAsync()
     {
         _connection.CreateTable<DbPlant>();
         _connection.CreateTable<DbPlantEvent>();
         _connection.CreateTable<DbPlantImage>();
+        _connection.CreateTable<DbPlantSetting>();
 
         if (_databaseCreated)
         {
             await SeedDatabaseAsync();
         }
+
+        MigratePlantDataUrls();
     }
 
     public async Task SeedDatabaseAsync()
     {
         await CreatePlantAsync(new CreatePlantRequest() { Name = "Pannekoekplant", Location = "Op de kast, beneden", WateringIntervalInDays = 4, LatinName = "" });
         await CreatePlantAsync(new CreatePlantRequest() { Name = "Bonsai", Location = "Raamkozijn, boven", WateringIntervalInDays = 7, LatinName = "" });
+    }
+
+    public void MigratePlantDataUrls()
+    {
+        SQLiteConnection.ColumnInfo? result = _connection.Query<SQLiteConnection.ColumnInfo>("SELECT * FROM pragma_table_info('DbPlantImage') WHERE Name = 'Url'", []).FirstOrDefault();
+
+        if(result == null)
+        {
+            Console.WriteLine("No migration of data urls needed. Column does not exist.");
+            return;
+        }
+
+        var plantIdsWithImage = _connection.Query<DataQueryResult<Guid>>("SELECT PlantId as Data FROM DbPlantImage").Select(x => x.Data);
+
+        foreach(var plantId in plantIdsWithImage)
+        {
+            var url = _connection.Query<DataQueryResult<string>>("SELECT Url as Data FROM DbPlantImage WHERE PlantId = ?", [plantId]).Select(x => x.Data).FirstOrDefault();
+
+            if(url == null)
+            {
+                Console.WriteLine("No data url found for plant... :(");
+                continue;
+            }
+
+            var data = UrlEncodedBase64ToBytes(url);
+
+            var r = new DbPlantImage()
+            {
+                PlantId = plantId,
+                Data = data,
+                MimeType = "image/jpg",
+            };
+
+            _connection.Update(r);
+        }
+
+        _connection.Execute("ALTER TABLE DbPlantImage DROP COLUMN Url");
+    }
+
+    private byte[] UrlEncodedBase64ToBytes(string url)
+    {
+        const string prefix = "data:image/png;base64,";
+
+        if (!url.StartsWith(prefix))
+        {
+            throw new Exception("Failed to convert url. Not image/png base64");
+        }
+
+        ReadOnlySpan<char> base64Data = url.AsSpan().Slice(prefix.Length);
+
+        byte[] bytes = new byte[base64Data.Length * 6 / 8];
+
+        if (!Convert.TryFromBase64Chars(base64Data, bytes, out int length))
+        {
+            throw new Exception("Failed to convert base 64 data to binary");
+        }
+
+        if(length != bytes.Length)
+        {
+            Console.WriteLine("Data length mismatch!");
+            // Wauw....
+            return bytes.AsSpan().Slice(0, length).ToArray();
+        }
+
+        return bytes;
     }
 }

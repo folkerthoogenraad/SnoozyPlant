@@ -1,0 +1,69 @@
+﻿.settings-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    
+    padding-top: 50px;
+    padding-bottom: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    flex-direction: column;
+}
+
+label {
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+
+    width: 100%;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+
+    width: 48px;
+    height: 24px;
+
+    border-radius: var(--border-radius);
+
+    background-color: var(--color-input-background);
+
+    position: relative;
+    
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out;
+    transition-property: background-color;
+}
+
+input[type="checkbox"]::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    
+    border-radius: var(--border-radius);
+    background: var(--color-input-white);
+
+    transition-duration: 0.2s;
+    transition-timing-function: ease-in-out;
+    transition-property: left;
+}
+
+input[type="checkbox"]:checked {
+    background-color: var(--color-primary);
+}
+
+input[type="checkbox"]:checked::before {
+    left: 28px;
+}
+
+.small {
+    width: 100%;
+    font-style: italic;
+    opacity: 0.7;
+    margin: 0;
+}
